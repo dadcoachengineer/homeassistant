@@ -1,0 +1,355 @@
+esphome:
+  name: main-panel-branch-circuit
+  platform: ESP32
+  board: nodemcu-32s
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_key
+
+ota:
+  password: !secret ota_password
+  id: my_ota
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "$friendly_name Fallback"
+    password: !secret failback_password
+
+captive_portal:
+
+substitutions:
+  friendly_name: Main Panel
+  disp_name: main-panel-branch-circuit
+  update_time: 5s
+# Current Transformers:
+#  20A/25mA SCT-006: 11143
+#  30A/1V SCT-013-030: 8650
+#  50A/1V SCT-013-050: 15420
+#  80A/26.6mA SCT-010: 41660
+#  100A/50ma SCT-013-000: 27518
+#  120A/40mA: SCT-016: 41787
+#  200A/100mA SCT-024: 27518
+  current_cal: '27518'
+# Jameco 9VAC Transformer: 
+#  For meter versions: 
+#  >= v1.3: 7305
+  voltage_cal: '7305'
+  
+spi:
+  clk_pin: 18
+  miso_pin: 19
+  mosi_pin: 23
+  
+sensor:
+
+#IC1
+  - platform: atm90e32
+    cs_pin: 5
+    phase_a:
+      voltage:
+        name: ${disp_name} Volts A
+        id: ic1Volts
+        accuracy_decimals: 1
+      current:
+        name: ${disp_name} CT1 Amps
+        id: ct1Amps
+      power:
+        name: ${disp_name} CT1 Watts
+        id: ct1Watts
+      gain_voltage: ${voltage_cal}
+      gain_ct: 41660
+    phase_b:
+      current:
+        name: ${disp_name} CT2 Amps
+        id: ct2Amps
+      power:
+        name: ${disp_name} CT2 Watts
+        id: ct2Watts
+      gain_voltage: ${voltage_cal}
+      gain_ct: 41660
+    phase_c:
+      current:
+        name: ${disp_name} CT3 Amps
+        id: ct3Amps
+      power:
+        name: ${disp_name} CT3 Watts
+        id: ct3Watts
+      gain_voltage: ${voltage_cal}
+      gain_ct: 11143
+    frequency:
+      name: ${disp_name} Freq A
+    line_frequency: 60Hz
+    gain_pga: 1X
+    update_interval: ${update_time}
+#IC2
+  - platform: atm90e32
+    cs_pin: 4
+    phase_a:
+      current:
+        name: ${disp_name} CT4 Amps
+        id: ct4Amps
+      power:
+        name: ${disp_name} CT4 Watts
+        id: ct4Watts
+      gain_voltage: ${voltage_cal}
+      gain_ct: 11143
+    phase_b:
+      current:
+        name: ${disp_name} CT5 Amps
+        id: ct5Amps
+      power:
+        name: ${disp_name} CT5 Watts
+        id: ct5Watts
+      gain_voltage: ${voltage_cal}
+      gain_ct: 41660
+    phase_c:
+      current:
+        name: ${disp_name} CT6 Amps
+        id: ct6Amps
+      power:
+        name: ${disp_name} CT6 Watts
+        id: ct6Watts
+      gain_voltage: ${voltage_cal}
+      gain_ct: 41660
+    frequency:
+      name: ${disp_name} Freq B
+    line_frequency: 60Hz
+    gain_pga: 1X
+    update_interval: ${update_time}
+
+#IC1 AddOn 1
+  - platform: atm90e32
+    cs_pin: 0
+    phase_a:
+      current:
+        name: ${disp_name} C7 Amps 
+        id: ct7Amps
+      power:
+        name: ${disp_name} CT7 Watts
+        id: ct7Watts
+      gain_voltage: ${voltage_cal}
+      gain_ct: 27518
+    phase_b:
+      current:
+        name: ${disp_name} CT8 Amps 
+        id: ct8Amps
+      power:
+        name: ${disp_name} CT8 Watts
+        id: ct8Watts
+      gain_voltage: ${voltage_cal}
+      gain_ct: 27518
+    line_frequency: 60Hz
+    gain_pga: 1X
+    update_interval: ${update_time}    
+
+#Service Entry Leg 1 Amps
+  - platform: template
+    name: Service Entry Leg 1 Amps
+    id: ServiceEntryLeg1TotalAmps
+    lambda: return id(ct7Amps).state  ;
+    accuracy_decimals: 2
+    unit_of_measurement: A
+    icon: "mdi:flash"
+    update_interval: ${update_time}
+#Service Entry Leg 1 Watts
+  - platform: template
+    name: Service Entry Leg 1 Watts
+    id: ServiceEntryLeg1Watts
+    lambda: return  (-1 * id(ct7Watts).state) ;
+    accuracy_decimals: 1
+    unit_of_measurement: W
+    icon: "mdi:flash-circle"
+    update_interval: ${update_time}
+#Service Entry Leg 1 kWh
+  - platform: total_daily_energy
+    name: Service Entry Leg 1 kWh
+    power_id: ServiceEntryLeg1Watts
+    filters:
+      - multiply: 0.001
+    unit_of_measurement: kWh
+
+#Service Entry Leg 2 Amps
+  - platform: template
+    name: Service Entry Leg 2 Amps
+    id: ServiceEntryLeg2TotalAmps
+    lambda: return id(ct8Amps).state  ;
+    accuracy_decimals: 2
+    unit_of_measurement: A
+    icon: "mdi:flash"
+    update_interval: ${update_time}
+#Service Entry Leg 2 Watts
+  - platform: template
+    name: Service Entry Leg 2 Watts
+    id: ServiceEntryLeg2Watts
+    lambda: return  (-1 * id(ct8Watts).state) ;
+    accuracy_decimals: 1
+    unit_of_measurement: W
+    icon: "mdi:flash-circle"
+    update_interval: ${update_time}
+#Service Entry Leg 2 kWh
+  - platform: total_daily_energy
+    name: Service Entry Leg 2 kWh
+    power_id: ServiceEntryLeg2Watts
+    filters:
+      - multiply: 0.001
+    unit_of_measurement: kWh
+
+#Utility Power Total Amps
+  - platform: template
+    name: Utility Power Total Amps
+    id: UtilityPowerTotalAmps
+    lambda: return id(ct7Amps).state + id(ct8Amps).state;
+    accuracy_decimals: 2
+    unit_of_measurement: A
+    icon: "mdi:flash"
+    update_interval: ${update_time}
+#Utility Power Total Watts
+  - platform: template
+    name: Utility Power Total Watts
+    id: UtilityPowerTotalWatts
+    lambda: return  (-1 * id(ct7Watts).state) + (-1 * id(ct8Watts).state) ;
+    accuracy_decimals: 1
+    unit_of_measurement: W
+    icon: "mdi:flash-circle"
+    update_interval: ${update_time}
+#Utility Power Total kWh
+  - platform: total_daily_energy
+    name: Utility Power Total kWh
+    power_id: UtilityPowerTotalWatts
+    filters:
+      - multiply: 0.001
+    unit_of_measurement: kWh
+
+#Oven Total Amps   
+  - platform: template
+    name: Oven Total Amps
+    id: OvenTotalAmps
+    lambda: return id(ct1Amps).state + id(ct2Amps).state ;
+    accuracy_decimals: 2
+    unit_of_measurement: A
+    icon: "mdi:flash"
+    update_interval: ${update_time}         
+#Oven Total Watts
+  - platform: template
+    name: Oven Total Watts
+    id: OvenTotalWatts
+    lambda: return  (-1 * id(ct2Watts).state) + id(ct1Watts).state ;
+    accuracy_decimals: 1
+    unit_of_measurement: W
+    icon: "mdi:flash-circle"
+    update_interval: ${update_time}
+#Oven kWh
+  - platform: total_daily_energy
+    name: Oven Total kWh
+    power_id: OvenTotalWatts
+    filters:
+      - multiply: 0.001
+    unit_of_measurement: kWh
+
+#Water Heater Total Amps   
+  - platform: template
+    name: Water Heater Total Amps
+    id: WaterHeaterTotalAmps
+    lambda: return id(ct3Amps).state + id(ct4Amps).state ;
+    accuracy_decimals: 2
+    unit_of_measurement: A
+    icon: "mdi:flash"
+    update_interval: ${update_time}         
+#Water Heater Total Watts
+  - platform: template
+    name: Water Heater Total Watts
+    id: WaterHeaterTotalWatts
+    lambda: return (-1 * id(ct4Watts).state) + id(ct3Watts).state ;
+    accuracy_decimals: 1
+    unit_of_measurement: W
+    icon: "mdi:flash-circle"
+    update_interval: ${update_time}
+#Water Heater kWh
+  - platform: total_daily_energy
+    name: Water Heater Total kWh
+    power_id: WaterHeaterTotalWatts
+    filters:
+      - multiply: 0.001
+    unit_of_measurement: kWh
+
+#Bedroom AC Total Amps   
+  - platform: template
+    name: Bedroom AC Total Amps
+    id: BedroomACTotalAmps
+    lambda: return id(ct5Amps).state + id(ct6Amps).state ;
+    accuracy_decimals: 2
+    unit_of_measurement: A
+    icon: "mdi:flash"
+    update_interval: ${update_time}         
+#Bedroom AC Total Watts
+  - platform: template
+    name: Bedroom AC Total Watts
+    id: BedroomACTotalWatts
+    lambda: return  id(ct6Watts).state + (-1 * id(ct5Watts).state) ;
+    accuracy_decimals: 1
+    unit_of_measurement: W
+    icon: "mdi:flash-circle"
+    update_interval: ${update_time}
+#Bedroom AC kWh
+  - platform: total_daily_energy
+    name: Bedroom AC Total kWh
+    power_id: BedroomACTotalWatts
+    filters:
+      - multiply: 0.001
+    unit_of_measurement: kWh
+
+# Send WiFi signal strength
+  - platform: wifi_signal
+    name: $friendly_name WiFi Strength
+    update_interval: 60s
+
+# Send uptime to HA
+  - platform: uptime
+    internal: true
+    name: Uptime Sensor
+    id: uptime_sensor
+    update_interval: 60s
+    on_raw_value:
+      then:
+        - text_sensor.template.publish:
+            id: uptime_human
+            state: !lambda |-
+              int seconds = round(id(uptime_sensor).raw_state);
+              int days = seconds / (24 * 3600);
+              seconds = seconds % (24 * 3600);
+              int hours = seconds / 3600;
+              seconds = seconds % 3600;
+              int minutes = seconds /  60;
+              seconds = seconds % 60;
+              return (
+                (days ? to_string(days) + "d " : "") +
+                (hours ? to_string(hours) + "h " : "") +
+                (minutes ? to_string(minutes) + "m " : "") +
+                (to_string(seconds) + "s")
+              ).c_str();
+
+switch:
+  - platform: restart
+    name: ${disp_name} Restart  
+time:
+  - platform: sntp
+    id: sntp_time
+
+# Send IP Address to HA
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: $friendly_name IP Address
+  - platform: template
+    name: $friendly_name Uptime
+    id: uptime_human
+    icon: mdi:clock-start
