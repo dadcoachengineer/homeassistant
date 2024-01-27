@@ -1,0 +1,179 @@
+blueprint:
+  name: Simple Keypad Code Actions
+  description: This blueprint simply takes 4 digit codes from zigbee keypads and executes an action. Eight pin/action pairs are defined but this can easily be expanded. Based on original blueprint from AndrejDelany.
+  domain: automation
+  input:
+    z2m_keypad_path:
+      name: MQTT State Topic of your Zigbee2MQTT Keypad
+      description: 'The State Topic is composed of your Zigbee2MQTT base_topic (see
+        your Z2M Addon Configuration) and the Friendly Name of your keypad in Z2M.
+        Example: zigbee2mqtt/Keypad'
+      default: zigbee2mqtt/Keypad
+    custpin1:
+      name: Custom PIN 1
+      default: 0
+      description: 'A custom PIN to trigger a custom action. Example: 0000'
+    action_cust1:
+      name: Action Custom 1
+      description: An action to be performed when custom PIN 1 is entered.
+      default: []
+      selector:
+        action: {}
+    custpin2:
+      name: Custom PIN 2
+      default: []
+      description: 'A custom PIN to trigger a custom action. Example: 0000'
+    action_cust2:
+      name: Action Custom 2
+      description: An action to be performed when custom PIN 2 is entered.
+      default: []
+      selector:
+        action: {}
+    custpin3:
+      name: Custom PIN 3
+      default: 0
+      description: 'A custom PIN to trigger a custom action. Example: 0000'
+    action_cust3:
+      name: Action Custom 3
+      description: An action to be performed when custom PIN 3 is entered.
+      default: []
+      selector:
+        action: {}
+    custpin4:
+      name: Custom PIN 4
+      default: []
+      description: 'A custom PIN to trigger a custom action. Example: 0000'
+    action_cust4:
+      name: Action Custom 4
+      description: An action to be performed when custom PIN 4 is entered.
+      default: []
+      selector:
+        action: {}
+    custpin5:
+      name: Custom PIN 5
+      default: 0
+      description: 'A custom PIN to trigger a custom action. Example: 0000'
+    action_cust5:
+      name: Action Custom 5
+      description: An action to be performed when custom PIN 5 is entered.
+      default: []
+      selector:
+        action: {}
+    custpin6:
+      name: Custom PIN 6
+      default: []
+      description: 'A custom PIN to trigger a custom action. Example: 0000'
+    action_cust6:
+      name: Action Custom 6
+      description: An action to be performed when custom PIN 6 is entered.
+      default: []
+      selector:
+        action: {}
+    custpin7:
+      name: Custom PIN 
+      default: 0
+      description: 'A custom PIN to trigger a custom action. Example: 0000'
+    action_cust7:
+      name: Action Custom 7
+      description: An action to be performed when custom PIN 7 is entered.
+      default: []
+      selector:
+        action: {}
+    custpin8:
+      name: Custom PIN 8
+      default: []
+      description: 'A custom PIN to trigger a custom action. Example: 0000'
+    action_cust8:
+      name: Action Custom 8
+      description: An action to be performed when custom PIN 8 is entered.
+      default: []
+      selector:
+        action: {}
+  source_url: https://community.home-assistant.io/t/zigbee2mqtt-sync-keypad-and-with-alarm-control-panel-states/345311
+variables:
+  pin_var_cust1: !input custpin1
+  pin_var_cust2: !input custpin2
+  pin_var_cust3: !input custpin3
+  pin_var_cust4: !input custpin4
+  pin_var_cust5: !input custpin5
+  pin_var_cust6: !input custpin6
+  pin_var_cust7: !input custpin7
+  pin_var_cust8: !input custpin8
+trigger:
+- platform: mqtt
+  topic: !input z2m_keypad_path
+  id: keypad_mqtt
+condition: []
+action:
+- choose:
+  - conditions:
+    - condition: trigger
+      id: keypad_mqtt
+    sequence:
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ trigger.payload_json.action_transaction != null and
+            trigger.payload_json.action_code == pin_var_cust1 }}'
+        sequence:
+        - choose:
+          default: !input action_cust1
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ trigger.payload_json.action_transaction != null and
+            trigger.payload_json.action_code == pin_var_cust2 }}'
+        sequence:
+        - choose:
+          default: !input action_cust2
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ trigger.payload_json.action_transaction != null and
+            trigger.payload_json.action_code == pin_var_cust3 }}'
+        sequence:
+        - choose:
+          default: !input action_cust3
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ trigger.payload_json.action_transaction != null and
+            trigger.payload_json.action_code == pin_var_cust4 }}'
+        sequence:
+        - choose:
+          default: !input action_cust4
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ trigger.payload_json.action_transaction != null and
+            trigger.payload_json.action_code == pin_var_cust5 }}'
+        sequence:
+        - choose:
+          default: !input action_cust5
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ trigger.payload_json.action_transaction != null and
+            trigger.payload_json.action_code == pin_var_cust6 }}'
+        sequence:
+        - choose:
+          default: !input action_cust6
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ trigger.payload_json.action_transaction != null and
+            trigger.payload_json.action_code == pin_var_cust7 }}'
+        sequence:
+        - choose:
+          default: !input action_cust7
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ trigger.payload_json.action_transaction != null and
+            trigger.payload_json.action_code == pin_var_cust8 }}'
+        sequence:
+        - choose:
+          default: !input action_cust8
+      default: []
+  default: []
+mode: restart
