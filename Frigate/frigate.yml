@@ -1,0 +1,219 @@
+detectors:
+  coral_pci:
+    type: edgetpu
+    device: pci
+#  coral_usb:
+#    type: edgetpu
+#    device: usb
+
+environment_vars:
+  PLUS_API_KEY: 
+
+mqtt:
+  host: a0d7b954-emqx
+  port: 1883
+  topic_prefix: frigate
+  client_id: frigate
+  user: frigate
+  password: 
+
+ffmpeg:
+  global_args:
+    -hide_banner
+    -loglevel warning
+    -an
+  input_args:
+    -avoid_negative_ts make_zero
+    -fflags +genpts+discardcorrupt
+    -rtsp_transport tcp
+    -use_wallclock_as_timestamps 1
+  output_args:
+    detect:
+      -f rawvideo 
+      -pix_fmt yuv420p
+    record: 
+      -f segment
+      -segment_time 60
+      -segment_format mp4
+      -reset_timestamps 1
+      -strftime 1 -c copy -an
+    rtmp:
+      -c copy
+      -f flv
+  hwaccel_args:
+    - -hwaccel
+    - vaapi
+    - -hwaccel_device
+    - /dev/dri/renderD128
+    - -hwaccel_output_format
+    - yuv420p
+
+birdseye:
+  enabled: True
+  width: 1280
+  height: 720
+  quality: 8
+  mode: objects
+
+record:
+  enabled: true
+#  retain_days: 2
+  events:
+    retain:
+      default: 30
+
+snapshots:
+  retain:
+    default: 30
+      
+cameras:
+####FRONT DOOR####  
+  front_door:
+    ffmpeg:
+      inputs:
+        - path: rtsps://192.168.1.1:7441/EjUPkPsmJFh7YmjK?enableSrtp
+          roles:
+            - detect
+            - record
+            - rtmp
+    detect:
+      width: 1600
+      height: 1200
+      fps: 10
+    motion:
+      mask:
+        - 0,411,65,787,626,781,633,731,632,668,692,660,823,765,1163,714,1242,658,1298,559,1600,540,1600,0,0,0
+    zones:
+      patio:
+        coordinates: 1600,1200,1264,934,1285,743,1086,709,966,743,737,763,390,803,0,1116,0,1200
+    snapshots:
+      enabled: true
+      bounding_box: true
+      crop: false
+      timestamp: false
+
+####PACKAGE####  
+  package:
+    ffmpeg:
+      inputs:
+        - path: rtsps://192.168.1.1:7441/hld94Mcpj72LDLrQ?enableSrtp
+          roles:
+            - detect
+            - record
+            - rtmp
+    detect:
+      width: 1600
+      height: 1200
+      fps: 10
+    snapshots:
+      enabled: true
+      bounding_box: true
+      crop: false
+      timestamp: false
+
+####GARAGE OUTSIDE####
+  garage_outside:
+    ffmpeg:
+      inputs:
+        - path: rtsps://192.168.1.1:7441/g4UBEdS2EY2deWet?enableSrtp
+          roles:
+            - detect
+            - record
+            - rtmp
+    detect:
+      width: 2688
+      height: 1512
+      fps: 10
+    motion:
+      mask:
+        - 2688,0,2688,410,0,410,0,0
+    zones:
+      driveway:
+        coordinates: 1619,461,2688,1512,0,1512,0,864,633,396,1072,446
+    snapshots:
+      enabled: true
+      bounding_box: true
+      crop: false
+      timestamp: false
+
+####GARAGE GATE####
+  garage_gate:
+    ffmpeg:
+      inputs:
+        - path: rtsps://192.168.1.1:7441/VlWKzSP6FZYTWRtg?enableSrtp
+          roles:
+            - detect
+            - record
+            - rtmp
+    detect:
+      width: 1920
+      height: 1080
+      fps: 10
+    motion:
+      mask:
+        - 1439,0,763,0,769,288,1041,558,1516,1080,1920,1080,1920,0
+    snapshots:
+      enabled: true
+      bounding_box: true
+      crop: false
+      timestamp: false
+
+####GARAGE INSIDE####
+  garage_inside:
+    ffmpeg:
+      inputs:
+        - path: rtsps://192.168.1.1:7441/V0MrmOwE30zn5CPR?enableSrtp
+          roles:
+            - detect
+            - record
+            - rtmp
+    detect:
+      width: 1920
+      height: 1080
+      fps: 10
+    snapshots:
+      enabled: true
+      bounding_box: true
+      crop: false
+      timestamp: false
+
+####BACKYARD####
+  backyard:
+    ffmpeg:
+      inputs:
+        - path: rtsps://192.168.1.1:7441/ZdPI09v40vHJAEH6?enableSrtp
+          roles:
+            - detect
+            - record
+            - rtmp
+    detect:
+      width: 1920
+      height: 1080
+      fps: 10
+    snapshots:
+      enabled: true
+      bounding_box: true
+      crop: false
+      timestamp: false
+
+####EAST GATE####
+  east_gate:
+    ffmpeg:
+      inputs:
+        - path: rtsps://192.168.1.1:7441/MJrbfFMQInF8LzkS?enableSrtp
+          roles:
+            - detect
+            - record
+            - rtmp
+    detect:
+      width: 1920
+      height: 1080
+      fps: 10
+    motion:
+      mask:
+        - 1664,388,1666,284,1471,0,0,0,0,1080
+    snapshots:
+      enabled: true
+      bounding_box: true
+      crop: false
+      timestamp: false
