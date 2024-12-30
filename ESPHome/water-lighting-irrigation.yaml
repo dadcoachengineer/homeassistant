@@ -1,0 +1,299 @@
+substitutions:
+  name: "water-lighting-irrigation"
+  friendly_name: "Water Lighting & Irrigation Relays"
+  device_description: "EST-PoE-32 driving a Krida I2C 16 channel relay board"
+
+
+esphome:
+  name: '${name}'
+  comment: '${device_description}'
+  friendly_name: '${friendly_name}'
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+esp32_ble_tracker:
+  scan_parameters:
+    active: true
+
+bluetooth_proxy:
+  active: true
+
+logger:
+
+api:
+  encryption:
+    key: !secret api_key
+
+ota:
+  password: !secret ota_password
+  id: my_ota
+  platform: esphome
+
+#wifi:
+#  ssid: !secret wifi_ssid
+#  password: !secret wifi_password
+#  use_address: water-lighting-irrigation-relays-xxxxxx.local
+
+ethernet:
+  type: RTL8201
+  mdc_pin: GPIO16
+  mdio_pin: GPIO17
+  clk_mode: GPIO0_IN
+  phy_addr: 0
+
+i2c:
+  id: bus_a
+  sda: GPIO15
+  scl: GPIO4
+  scan: true
+
+pcf8574:
+  - id: 'krida16c_01'
+    address: 0x27
+    pcf8575: true
+
+# Individual outputs
+switch:
+  - platform: gpio
+    name: "Water Main Open"
+    pin:
+      pcf8574: krida16c_01
+      number: 0
+      mode:
+        output: true
+      inverted: true
+    id: relay1
+    icon: "mdi:gate"
+    interlock: [relay2]
+    on_turn_on:
+    - delay: 10000ms
+    - switch.turn_off: relay1
+    restore_mode: ALWAYS_OFF
+  - platform: gpio
+    name: "Water Main Close"
+    pin:
+      pcf8574: krida16c_01
+      number: 1
+      mode:
+        output: true
+      inverted: true
+    id: relay2
+    icon: "mdi:gate"
+    interlock: [relay1]
+    on_turn_on:
+    - delay: 10000ms
+    - switch.turn_off: relay2
+    restore_mode: ALWAYS_OFF
+
+  - platform: gpio
+    name: "West Sod"
+    icon: "mdi:gate"
+    pin:
+      pcf8574: krida16c_01
+      number: 2
+      inverted: true
+    id: relay3
+    restore_mode: ALWAYS_OFF
+
+  - platform: gpio
+    name: "West Flower Bed"
+    icon: "mdi:gate"
+    pin:
+      pcf8574: krida16c_01
+      number: 3
+      inverted: true
+    id: relay4
+    restore_mode: ALWAYS_OFF
+
+  - platform: gpio
+    name: "West Yard Bed"
+    icon: "mdi:gate"
+    pin:
+      pcf8574: krida16c_01
+      number: 4
+      inverted: true
+    id: relay5
+    restore_mode: ALWAYS_OFF
+
+  - platform: gpio
+    name: "East Sod"
+    icon: "mdi:gate"
+    pin:
+      pcf8574: krida16c_01
+      number: 5
+      inverted: true
+    id: relay6
+    restore_mode: ALWAYS_OFF
+
+  - platform: gpio
+    name: "East Flower Bed"
+    icon: "mdi:gate"
+    pin:
+      pcf8574: krida16c_01
+      number: 6
+      inverted: true
+    id: relay7
+    restore_mode: ALWAYS_OFF
+
+  - platform: gpio
+    name: "East Yard Bed"
+    icon: "mdi:gate"
+    pin:
+      pcf8574: krida16c_01
+      number: 7
+      inverted: true
+    id: relay8
+    restore_mode: ALWAYS_OFF
+
+  - platform: gpio
+    name: "East Yard Lights"
+    icon: "mdi:outdoor-lamp"
+    pin:
+      pcf8574: krida16c_01
+      number: 8
+      inverted: true
+    id: relay9
+    restore_mode: ALWAYS_OFF
+
+  - platform: gpio
+    name: "West Yard Lights"
+    icon: "mdi:outdoor-lamp"
+    pin:
+      pcf8574: krida16c_01
+      number: 9
+      inverted: true
+    id: relay10
+    restore_mode: ALWAYS_OFF
+
+  - platform: gpio
+    name: "FM Transmitter"
+    icon: "mdi:radio"
+    pin:
+      pcf8574: krida16c_01
+      number: 10
+      inverted: true
+    id: relay11
+    restore_mode: ALWAYS_OFF
+
+  - platform: gpio
+    name: "Lighting Cabinet Exhaust Fan"
+    icon: "mdi:fan"
+    pin:
+      pcf8574: krida16c_01
+      number: 11
+      inverted: true
+    id: relay12
+    restore_mode: ALWAYS_OFF
+
+  - platform: gpio
+    name: "East Box Pump"
+    icon: "mdi:pump"
+    pin:
+      pcf8574: krida16c_01
+      number: 12
+      inverted: true
+    id: relay13
+    restore_mode: ALWAYS_OFF
+
+binary_sensor:
+  - platform: gpio
+    name: "Water Main Valve Open"
+    id: mainopen
+    pin:
+      number: 36
+      mode: input
+      
+  - platform: gpio
+    name: "Water Main Valve Closed"
+    id: mainclosed
+    pin:
+      number: 39
+      mode: input
+
+  - platform: gpio
+    name: "East Box Float Low"
+    id: eastboxlow
+    pin:
+      number: 5
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+
+  - platform: gpio
+    name: "East Box Float High"
+    id: eastboxhigh
+    pin:
+      number: 33
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+
+  - platform: template
+    name: "Water Main Valve Status"
+    lambda: |-
+      if (id(mainopen).state == 1) {
+        // Water valve is open.
+        return true;
+      } else {
+        // Water valve is closed.
+        return false;
+      }
+
+sensor:
+  - platform: pulse_meter
+    pin:
+      number: 23
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    name: "Water Meter Flow"
+    id: water_meter_flow
+    unit_of_measurement: gpm
+    device_class: water
+    state_class: total_increasing
+    timeout: 120s
+    icon: "mdi:water"
+    total:
+      name: "Water Meter Usage"
+      unit_of_measurement: gal
+      id: water_meter_usage
+      accuracy_decimals: 3
+      device_class: water
+      state_class: total_increasing
+
+
+
+
+#switch:
+#  - platform: gpio
+#    name: "Pin 5"
+#    pin: 5
+#  - platform: gpio
+#    name: "Pin 4"
+#    pin: 4
+#  - platform: gpio
+#    name: "Pin 0"
+#    pin: 0
+#  - platform: gpio
+#    name: "Pin 2"
+#    pin: 2
+#  - platform: gpio
+#    name: "Pin 15"
+#    pin: 15
+#  - platform: gpio
+#    name: "Pin 32"
+#    pin: 32
+#  - platform: gpio
+#    name: "Pin 33"
+#    pin: 33
+#  - platform: gpio
+#    name: "Pin 14"
+#    pin: 14
+
+  
