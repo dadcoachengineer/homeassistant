@@ -1,0 +1,137 @@
+substitutions:
+  name: livingroom-hvac
+  friendly_name: "Living Room HVAC"
+  comment: "ESPHome flashed M5Stack Atom with Tail485 attached to livingroom/kitchen AHU in attic"
+
+esphome:
+  name: ${name}
+  name_add_mac_suffix: false
+  friendly_name: ${friendly_name}
+  comment: ${comment}
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging (but not via UART)
+logger:
+  #baud_rate: 0
+  #logs:
+  #  component: ERROR
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_key
+  services:
+    - service: follow_me
+      variables:
+        temperature: float
+      then:
+        midea_ac.follow_me:
+          temperature: !lambda "return temperature;"
+          beeper: false
+
+# Enable wifi
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  use_address: 192.168.1.234
+
+# url: https://github.com/exciton/esphome
+external_components:
+  - source: github://mdrobnak/esphome@delays_updated
+    components: [midea_xye]
+    refresh: 0s
+
+# UART settings for RS485 converter dongle (required)
+uart:
+  tx_pin: GPIO26
+  rx_pin: GPIO32
+  baud_rate: 4800
+  debug: #If you want to help reverse engineer
+    direction: BOTH
+    #dummy_receiver: true
+    #after:
+    #  delimiter: [0x55]
+
+# Enable esphome OTA updates
+ota:
+  password: !secret ota_password
+  id: my_ota
+  platform: esphome
+
+
+# Main settings
+climate:
+  - platform: midea_xye
+    name: Living Room HVAC
+    period: 1s                  # Optional. Defaults to 1s
+    timeout: 200ms              # Optional. Defaults to 100ms
+    beeper: false               # Optional. Beep on commands.
+    #default_target_temperature_low: 18°C
+    #default_target_temperature_high: 24°C
+    #custom_auto: true
+    use_fahrenheit: true
+#    visual:                     # Optional. Example of visual settings override.
+#      min_temperature: 65 °F    # min: 17
+#      max_temperature: 78 °F    # max: 30
+#      temperature_step: 0.5 °F  # min: 0.5
+    visual:                     # Optional. Example of visual settings override.
+      min_temperature: 17 °C    # min: 17
+      max_temperature: 30 °C    # max: 30
+      temperature_step: 0.5 °C  # min: 0.5
+    supported_modes:            # Optional. 
+      - FAN_ONLY
+      - HEAT_COOL              
+      - COOL
+      - HEAT
+      - DRY
+    supported_presets:      # Optional
+      - BOOST
+    outdoor_temperature:        # Optional. Outdoor temperature sensor
+      name: Outside Temp
+    temperature_2a:             # Optional. Inside coil temperature
+      name: Inside Coil Inlet Temp
+    temperature_3:
+      name: Outside Coil Temperature
+    timer_start:                # Optional. On timer duration
+      name: Timer Start
+    timer_stop:                 # Optional. Off timer duration
+      name: Timer Stop
+    error_flags:                # Optional.
+      name: Error Flags
+    protect_flags:              # Optional. 
+      name: Protect Flags
+    static_pressure:
+      name: Static Pressure
+      min_value: 0
+
+sensor:
+  - platform: homeassistant
+    entity_id: sensor.mila_air_purifier_a673ac_mila_temp_sensor_temperature
+    id: livingroom_thermostat_follow_me
+    name: "Living Room Temperature Sensor"
+    filters:
+      - throttle: 10s
+      - heartbeat: 1min
+      - debounce: 1s
+      - lambda: return (x - 32.0) * (5.0/9.0);
+    on_value:
+      midea_ac.follow_me:
+        temperature: !lambda "return x;"
+  - platform: wifi_signal
+    name: Living Room HVAC Wi-Fi Signal
+    update_interval: 60s
+  - platform: uptime
+    name: "Uptime"
+    id: uptime_sec
+    internal: true
+  - platform: template
+    name: Living Room HVAC Uptime Days
+    lambda: |-
+      return (id(uptime_sec).state/60)/60/24;
+    icon: mdi:clock-start
+    unit_of_measurement: days
+    update_interval: 60s
